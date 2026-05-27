@@ -1,56 +1,84 @@
 import SwiftUI
+import CoreData
 
-struct CadastroView: View {
+struct ContentView: View {
 
     @Environment(\.managedObjectContext)
     private var context
 
-    @Environment(\.dismiss)
-    var dismiss
-
-    @StateObject var vm = ContatoViewModel()
+    @FetchRequest(
+        entity: Contato.entity(),
+        sortDescriptors: []
+    ) var contatos: FetchedResults<Contato>
 
     var body: some View {
 
-        Form {
+        NavigationView {
 
-            Section(header: Text("Dados")) {
+            List {
 
-                TextField("Nome", text: $vm.nome)
+                ForEach(contatos) { contato in
 
-                TextField("Email", text: $vm.email)
+                    NavigationLink {
 
-                TextField("Telefone", text: $vm.telefone)
+                        EditarView(
+                            contato: contato,
+                            nome: contato.nome ?? "",
+                            email: contato.email ?? "",
+                            telefone: contato.telefone ?? "",
+                            nascimento: contato.nascimento ?? "",
+                            cep: contato.cep ?? "",
+                            bairro: contato.bairro ?? "",
+                            logradouro: contato.logradouro ?? "",
+                            numero: contato.numero ?? "",
+                            estado: contato.estado ?? "",
+                            cidade: contato.cidade ?? ""
+                        )
 
-                TextField("Nascimento", text: $vm.nascimento)
-            }
+                    } label: {
 
-            Section(header: Text("Endereço")) {
+                        VStack(alignment: .leading) {
 
-                TextField("CEP", text: $vm.cep)
+                            Text(contato.nome ?? "")
+                                .font(.headline)
 
-                Button("Buscar CEP") {
-                    vm.buscarCEP()
+                            Text(contato.email ?? "")
+
+                            Text(contato.telefone ?? "")
+                        }
+                    }
                 }
-
-                TextField("Logradouro", text: $vm.logradouro)
-
-                TextField("Número", text: $vm.numero)
-
-                TextField("Bairro", text: $vm.bairro)
-
-                TextField("Cidade", text: $vm.cidade)
-
-                TextField("Estado", text: $vm.estado)
+                .onDelete(perform: deletar)
             }
+            .navigationTitle("Contatos")
+            .toolbar {
 
-            Button("Salvar") {
+                NavigationLink(
+                    destination: CadastroView()
+                ) {
 
-                vm.salvar(context: context)
-
-                dismiss()
+                    Image(systemName: "plus")
+                }
             }
         }
-        .navigationTitle("Cadastro")
+    }
+
+    func deletar(at offsets: IndexSet) {
+
+        for index in offsets {
+
+            let contato = contatos[index]
+
+            context.delete(contato)
+        }
+
+        do {
+
+            try context.save()
+
+        } catch {
+
+            print("Erro ao deletar")
+        }
     }
 }
